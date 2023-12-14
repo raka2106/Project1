@@ -1,15 +1,31 @@
 name: GitHub Actions to Publish Docker Image
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+run-name: ${{ github.actor }} is testing out GitHub Actions 
+on:
+  push:
+    branches:
+      - main
 jobs:
-  Build-and-push-docker-image :
+  build-and-push-docker-image:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
       
-      - name: build and tag docker image
-        run : |
-          docker build -t ${{secrets.USERNAME}}/action-project1:v1 -f Dockerfile .
-          - name: Push to Dockerhub
-            run: docker login -u ${{secrets.USERNAME}} -p ${{secrets.ACCESS_TOKEN}} && docker push ${{secrets.USERNAME}}/action-project1:v1
+      - name: Login to Docker Hub (securely)
+        env:
+          DOCKER_USERNAME: ${{ secrets.USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_TOKEN
+      
+      - name: Build Docker image with dynamic tag
+        run: |
+          docker build -t ${{ secrets.USERNAME }}/action-project1:${{ github.sha }} -f Dockerfile .
+        env:
+          DOCKER_USERNAME: ${{ secrets.USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      
+      - name: Push Docker image
+        run: docker push ${{ secrets.USERNAME }}/action-project1:${{ github.sha }}
+        env:
+          DOCKER_USERNAME: ${{ secrets.USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.ACCESS_TOKEN }}
